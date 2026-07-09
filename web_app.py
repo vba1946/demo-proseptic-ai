@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.secret_key = os.urandom(16)
 
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
-TOKEN_SECRET = os.environ.get('TOKEN_SECRET', secrets.token_hex(32))
+TOKEN_SECRET = os.environ.get('TOKEN_SECRET', 'qwerty123')
 TOKEN_DURATION = 48 * 3600  # 48 hours
 MAX_QUESTIONS = 18
 COLLECTION_NAME = 'septiki_pro'
@@ -248,11 +248,7 @@ def ask():
 
 @app.route('/health')
 def health():
-    return jsonify({
-        'status': 'ok',
-        'api_key_set': bool(API_KEY),
-        'all_env_keys': sorted(os.environ.keys()),
-    })
+    return jsonify({'status': 'ok', 'api_key_set': bool(API_KEY)})
 
 
 if __name__ == '__main__':
