@@ -143,12 +143,12 @@ function escapeHtml(str) {
 function addContactForm() {
   const div = document.createElement('div');
   div.className = 'msg bot';
-  div.innerHTML = '<div class="bubble contact-form"><p style="margin:0 0 8px;font-size:13px;color:#333;">Оставьте ваши контакты, менеджер свяжется с вами:</p><input type="text" id="contactName" placeholder="Имя" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:6px;box-sizing:border-box;"><input type="tel" id="contactPhone" placeholder="Телефон" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:6px;box-sizing:border-box;"><button onclick="submitContact()" style="width:100%;padding:8px;background:#1a3a6b;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">Отправить</button><span id="contactStatus" style="display:block;margin-top:6px;font-size:12px;color:#666;"></span></div>';
+  div.innerHTML = '<div class="bubble contact-form"><p style="margin:0 0 8px;font-size:13px;color:#333;">Оставьте ваши контакты, менеджер свяжется с вами:</p><input type="text" id="contactName" placeholder="Имя" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:6px;box-sizing:border-box;"><input type="tel" id="contactPhone" placeholder="Телефон" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:6px;box-sizing:border-box;"><button onclick="submitContact(this)" style="width:100%;padding:8px;background:#1a3a6b;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">Отправить</button><span id="contactStatus" style="display:block;margin-top:6px;font-size:12px;color:#666;"></span></div>';
   messages.appendChild(div);
   messages.scrollTop = messages.scrollHeight;
 }
 
-async function submitContact() {
+async function submitContact(btn) {
   const name = document.getElementById('contactName').value.trim();
   const phone = document.getElementById('contactPhone').value.trim();
   const status = document.getElementById('contactStatus');
@@ -161,7 +161,7 @@ async function submitContact() {
     if (data.ok) {
       document.getElementById('contactName').disabled = true;
       document.getElementById('contactPhone').disabled = true;
-      event.target.disabled = true;
+      document.querySelector('.contact-form button').disabled = true;
     }
   } catch {
     status.textContent = 'Ошибка отправки. Попробуйте позже.';
