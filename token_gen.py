@@ -11,6 +11,8 @@ def main():
     parser = argparse.ArgumentParser(description='Генератор токенов для demo-proseptic-ai')
     parser.add_argument('--domain', default='demo-proseptic-ai.up.railway.app', help='Домен демо-сайта')
     parser.add_argument('--hours', type=int, default=48, help='Срок действия (часы)')
+    parser.add_argument('--unlimited', action='store_true', help='Без лимита вопросов (для разработчика)')
+    parser.add_argument('--maxq', type=int, default=18, help='Лимит вопросов для этого токена')
     args = parser.parse_args()
 
     secret = TOKEN_SECRET
@@ -25,9 +27,10 @@ def main():
                 f.write(secret)
             print(f'[INFO] Создан новый TOKEN_SECRET в {db_path}')
 
+    maxq = 9999 if args.unlimited else args.maxq
     duration = args.hours * 3600
     expiry = int(time.time()) + duration
-    raw = f'{expiry}'
+    raw = f'{expiry}:{maxq}'
     sig = hmac.new(secret.encode(), raw.encode(), hashlib.sha256).hexdigest()[:16]
     token = base64.urlsafe_b64encode(f'{raw}:{sig}'.encode()).decode().rstrip('=')
 
@@ -48,9 +51,13 @@ def main():
     print()
     print(f'  Ссылка:  https://{args.domain}/?token={token}')
     print(f'  Срок:    {expiry_str}')
-    print(f'  Лимит:   18 вопросов (1 диалог)')
+    limit_str = 'Без лимита' if args.unlimited else f'{maxq} вопросов'
+    print(f'  Лимит:   {limit_str}')
     print()
-    print('  Отправь эту ссылку компании для демонстрации.')
+    if args.unlimited:
+        print('  Для разработчика: без лимита вопросов.')
+    else:
+        print('  Отправь эту ссылку компании для демонстрации.')
     print()
 
 

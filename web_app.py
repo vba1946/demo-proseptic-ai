@@ -12,7 +12,7 @@ app.secret_key = os.urandom(16)
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 TOKEN_SECRET = os.environ.get('TOKEN_SECRET', 'qwerty123')
 TOKEN_DURATION = 48 * 3600  # 48 hours
-MAX_QUESTIONS = 18
+MAX_QUESTIONS = 18  # default, переопределяется из токена
 COLLECTION_NAME = 'septiki_pro'
 
 API_KEY = os.environ.get('OPENAI_API_KEY') or _b64.b64decode('c2stcHJvai1YVTZYRUtaZmxlTnp0NENjZmRETlEwYy0wSnZ3d3hlb0hKZFpUUXZRNUJIRE44bURGUThsaE9LUG1yNnJ5YWVaNFBTVU9FVm03RlQzQmxia0ZKM2EtS193UmdyYlBXSXJIem5sTnlPV1Rvc0pJN0JyN0p0MDYwbDU3dVU5MXJjUko1T0toS3VYTTFoSGZHTF8zUnl3ZjM2SDdzNEE=').decode('utf-8')
@@ -125,9 +125,11 @@ def init_db():
     conn.close()
 
 
-def make_token():
+def make_token(maxq=None):
+    if maxq is None:
+        maxq = MAX_QUESTIONS
     expiry = int(time.time()) + TOKEN_DURATION
-    raw = f'{expiry}'
+    raw = f'{expiry}:{maxq}'
     sig = hmac.new(TOKEN_SECRET.encode(), raw.encode(), hashlib.sha256).hexdigest()[:16]
     token = base64.urlsafe_b64encode(f'{raw}:{sig}'.encode()).decode().rstrip('=')
     db_path = os.path.join(DATA_DIR, 'tokens.db')
@@ -135,23 +137,32 @@ def make_token():
     conn.execute('INSERT OR IGNORE INTO token_usage (token, questions_used) VALUES (?, 0)', (token,))
     conn.commit()
     conn.close()
-    return token, expiry
+    return token, expiry, maxq
 
 
 def validate_token(token):
     try:
         padded = token + '=' * (4 - len(token) % 4)
         decoded = base64.urlsafe_b64decode(padded).decode()
-        raw, sig = decoded.split(':', 1)
+        parts = decoded.split(':')
+        if len(parts) == 2:
+            raw, sig = parts
+            maxq = MAX_QUESTIONS
+        elif len(parts) >= 3:
+            sig = parts[-1]
+            raw = ':'.join(parts[:-1])
+            maxq = int(parts[1])
+        else:
+            return None, None, 'Неверный формат токена'
         expected = hmac.new(TOKEN_SECRET.encode(), raw.encode(), hashlib.sha256).hexdigest()[:16]
         if not hmac.compare_digest(sig, expected):
-            return None, 'Неверная подпись токена'
-        expiry = int(raw)
+            return None, None, 'Неверная подпись токена'
+        expiry = int(parts[0])
         if time.time() > expiry:
-            return None, 'Срок действия токена истёк'
-        return raw, None
+            return None, None, 'Срок действия токена истёк'
+        return raw, maxq, None
     except Exception as e:
-        return None, str(e)
+        return None, None, str(e)
 
 
 def get_questions_used(token):
@@ -183,16 +194,16 @@ def increment_questions(token):
 def index():
     token = request.args.get('token', '')
     if not token:
-        return render_template('chat.html', error='Укажите токен доступа в ссылке', token='', questions_left=0, expiry_readable='')
-    raw, err = validate_token(token)
+        return render_template('chat.html', error='Укажите токен доступа в ссылке', token='', questions_left=0, expiry_readable='', token_only='', expiry_only='')
+    raw, maxq, err = validate_token(token)
     if err:
-        return render_template('chat.html', error=err, token='', questions_left=0, expiry_readable='')
+        return render_template('chat.html', error=err, token='', questions_left=0, expiry_readable='', token_only='', expiry_only='')
     used = get_questions_used(token)
-    left = max(0, MAX_QUESTIONS - used)
-    expiry_ts = int(raw)
+    left = max(0, maxq - used)
+    expiry_ts = int(raw.split(':')[0])
     expiry_dt = datetime.fromtimestamp(expiry_ts, tz=timezone.utc)
     expiry_readable = expiry_dt.strftime('%d.%m.%Y %H:%M MSK')
-    return render_template('chat.html', token=token, questions_left=left, max_questions=MAX_QUESTIONS, expiry_readable=expiry_readable, error='')
+    return render_template('chat.html', token=token, questions_left=left, max_questions=maxq, expiry_readable=expiry_readable, error='', token_only='', expiry_only='')
 
 
 @app.route('/ask', methods=['POST'])
@@ -208,13 +219,13 @@ def ask():
     if not token:
         return jsonify({'answer': 'Ошибка авторизации.'})
 
-    raw, err = validate_token(token)
+    raw, maxq, err = validate_token(token)
     if err:
         return jsonify({'answer': f'Ошибка доступа: {err}'})
 
     used = get_questions_used(token)
-    if used >= MAX_QUESTIONS:
-        return jsonify({'answer': 'Лимит 18 вопросов исчерпан. Спасибо за участие в демонстрации.'})
+    if used >= maxq:
+        return jsonify({'answer': f'Лимит {maxq} вопросов исчерпан. Спасибо за участие в демонстрации.'})
 
     question = data.get('question', '').strip()
     if not question:
@@ -237,11 +248,12 @@ def ask():
 
     increment_questions(token)
     used_new = get_questions_used(token)
-    left = max(0, MAX_QUESTIONS - used_new)
+    left = max(0, maxq - used_new)
 
     return jsonify({
         'answer': r.choices[0].message.content,
         'questions_left': left,
+        'max_questions': maxq,
         'tokens': {'in': r.usage.prompt_tokens, 'out': r.usage.completion_tokens}
     })
 

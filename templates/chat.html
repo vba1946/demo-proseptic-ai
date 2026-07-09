@@ -44,7 +44,13 @@ body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; h
     <h1>Система с AI-консультантом</h1>
     <div class="sub"><span>Демонстрация</span><span class="info">Вопросов: <span id="counter">{{ questions_left }}</span>/{{ max_questions }} · {{ expiry_readable }}</span></div>
   </div>
-  <div class="messages" id="messages"></div>
+  <div class="messages" id="messages">
+    <div class="msg bot"><div class="bubble">Здравствуйте! Я — AI-консультант по системам автономной канализации.
+
+Задайте любой вопрос: помогу подобрать тип системы под ваш участок, расскажу о требованиях к монтажу и условиях установки.
+
+В рамках демонстрации доступно {{ max_questions }} вопросов. Ссылка действует 48 часов.</div></div>
+  </div>
   <div class="input-area">
     <input type="text" id="input" placeholder="Задайте вопрос..." autofocus>
     <button id="sendBtn" onclick="send()">Отправить</button>
