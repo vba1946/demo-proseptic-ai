@@ -4,6 +4,9 @@ from datetime import datetime, timezone
 sys.stdout.reconfigure(encoding='utf-8')
 logging.basicConfig(level=logging.INFO)
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, request, jsonify, render_template, redirect, url_for, abort
 
 app = Flask(__name__)
