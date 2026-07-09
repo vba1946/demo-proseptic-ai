@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.secret_key = os.urandom(16)
 
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
-TOKEN_SECRET = os.environ.get('TOKEN_SECRET', 'qwerty123')
+TOKEN_SECRET = 'demo-secret-2024'
 TOKEN_DURATION = 48 * 3600  # 48 hours
 MAX_QUESTIONS = 18  # default, переопределяется из токена
 COLLECTION_NAME = 'septiki_pro'

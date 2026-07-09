@@ -1,9 +1,9 @@
 """Генератор токенов для демо-сайта."""
-import os, sys, hmac, hashlib, base64, time, sqlite3, secrets, argparse
+import os, sys, hmac, hashlib, base64, time, sqlite3, argparse
 from datetime import datetime, timezone
 
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
-TOKEN_SECRET = os.environ.get('TOKEN_SECRET')
+TOKEN_SECRET = 'demo-secret-2024'
 TOKEN_DURATION = 48 * 3600
 
 
@@ -15,23 +15,11 @@ def main():
     parser.add_argument('--maxq', type=int, default=18, help='Лимит вопросов для этого токена')
     args = parser.parse_args()
 
-    secret = TOKEN_SECRET
-    if not secret:
-        db_path = os.path.join(DATA_DIR, '.token_secret')
-        if os.path.exists(db_path):
-            with open(db_path) as f:
-                secret = f.read().strip()
-        else:
-            secret = secrets.token_hex(32)
-            with open(db_path, 'w') as f:
-                f.write(secret)
-            print(f'[INFO] Создан новый TOKEN_SECRET в {db_path}')
-
-    maxq = 9999 if args.unlimited else args.maxq
     duration = args.hours * 3600
     expiry = int(time.time()) + duration
+    maxq = 9999 if args.unlimited else args.maxq
     raw = f'{expiry}:{maxq}'
-    sig = hmac.new(secret.encode(), raw.encode(), hashlib.sha256).hexdigest()[:16]
+    sig = hmac.new(TOKEN_SECRET.encode(), raw.encode(), hashlib.sha256).hexdigest()[:16]
     token = base64.urlsafe_b64encode(f'{raw}:{sig}'.encode()).decode().rstrip('=')
 
     db_path = os.path.join(DATA_DIR, 'tokens.db')
