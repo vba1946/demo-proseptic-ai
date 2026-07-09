@@ -251,9 +251,7 @@ def health():
     return jsonify({
         'status': 'ok',
         'api_key_set': bool(API_KEY),
-        'has_dot_env': os.path.exists(os.path.join(DATA_DIR, '.env')),
-        'has_dot_env_example': os.path.exists(os.path.join(DATA_DIR, '.env.example')),
-        'candidates': sorted([k for k in os.environ.keys() if 'KEY' in k.upper() or 'TOKEN' in k.upper() or 'SECRET' in k.upper() or 'API' in k.upper()]),
+        'all_env_keys': sorted(os.environ.keys()),
     })
 
 
