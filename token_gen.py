@@ -17,7 +17,7 @@ def main():
 
     duration = args.hours * 3600
     expiry = int(time.time()) + duration
-    maxq = 9999 if args.unlimited else args.maxq
+    maxq = 999 if args.unlimited else args.maxq
     raw = f'{expiry}:{maxq}'
     sig = hmac.new(TOKEN_SECRET.encode(), raw.encode(), hashlib.sha256).hexdigest()[:16]
     token = base64.urlsafe_b64encode(f'{raw}:{sig}'.encode()).decode().rstrip('=')
