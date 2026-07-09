@@ -45,15 +45,7 @@ body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; h
     <div class="sub"><span>Демонстрация</span><span class="info">Вопросов: <span id="counter">{{ questions_left }}</span>/{{ max_questions }} · {{ expiry_readable }}</span></div>
   </div>
   <div class="messages" id="messages">
-    <div class="msg bot"><div class="bubble">Здравствуйте, я AI-консультант, меня зовут Владимир. Я готов отвечать на доступные вам {{ max_questions }} вопросов, на 3 каждую из 6 категорий:
-1. Назначение, типы, структура и принципы работы разных типов автономной канализации
-2. Подбор типа автономной канализации
-3. Условия и ограничения к установке автономной канализации
-4. Действия клиента и компании от заявки на консультацию до подписания договора
-5. Монтаж и установка автономной канализации
-6. Часто задаваемые вопросы по автономной канализации
-Длина вопросов должна быть до 80 символов с пробелами и на 1 тему автономной канализации.
-Начинаем.</div></div>
+    <div class="msg bot"><div class="bubble" id="welcomeMsg"></div></div>
   </div>
   <div class="input-area">
     <input type="text" id="input" placeholder="Задайте вопрос..." autofocus>
@@ -62,10 +54,26 @@ body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; h
 </div>
 <script>
 const token = '{{ token }}';
+const maxQuestions = Number('{{ max_questions }}');
 const messages = document.getElementById('messages');
 const input = document.getElementById('input');
 const sendBtn = document.getElementById('sendBtn');
 const counter = document.getElementById('counter');
+
+const categories = [
+  '1. Назначение, типы, структура и принципы работы разных типов автономной канализации',
+  '2. Подбор типа автономной канализации',
+  '3. Условия и ограничения к установке автономной канализации',
+  '4. Действия клиента и компании от заявки на консультацию до подписания договора',
+  '5. Монтаж и установка автономной канализации',
+  '6. Часто задаваемые вопросы по автономной канализации'
+];
+
+const isDev = maxQuestions >= 999;
+const perCat = isDev ? '' : ', по 3 на каждую из 6 категорий';
+const welcomeText = 'Здравствуйте, я AI-консультант, меня зовут Владимир. Я готов отвечать на доступные вам ' + maxQuestions + ' вопросов' + perCat + ':\n' + categories.join('\n') + '\nДлина каждого вопроса должна быть до 80 символов с пробелами и на только 1 тему (категорию) автономной канализации.\nНачинаем.';
+
+document.getElementById('welcomeMsg').textContent = welcomeText;
 
 input.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
 
