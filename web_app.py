@@ -4,13 +4,6 @@ from datetime import datetime, timezone
 sys.stdout.reconfigure(encoding='utf-8')
 logging.basicConfig(level=logging.INFO)
 
-from dotenv import load_dotenv
-load_dotenv()
-
-for _k in ['OPENAI_API_KEY','TOKEN_SECRET','PORT']:
-    _v = os.environ.get(_k,'')
-    logging.info(f'ENV {_k}={_v[:10]}...' if _v and len(_v)>10 else f'ENV {_k}=<empty>' if not _v else f'ENV {_k}={_v}')
-
 from flask import Flask, request, jsonify, render_template, redirect, url_for, abort
 
 app = Flask(__name__)
