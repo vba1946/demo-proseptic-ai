@@ -211,7 +211,7 @@ def ask():
 
     used = get_questions_used(token)
     if used >= maxq:
-        return jsonify({'answer': f'Лимит {maxq} вопросов исчерпан. Спасибо за участие в демонстрации.'})
+        return jsonify({'answer': 'Количество доступных вопросов исчерпано. Если хотите продолжить консультацию с менеджером, оставьте свои контакты (имя, телефон).', 'questions_left': 0, 'exhausted': True})
 
     question = data.get('question', '').strip()
     if not question:
@@ -242,6 +242,27 @@ def ask():
         'max_questions': maxq,
         'tokens': {'in': r.usage.prompt_tokens, 'out': r.usage.completion_tokens}
     })
+
+
+@app.route('/contact', methods=['POST'])
+def contact():
+    data = request.get_json()
+    token = data.get('token', '')
+    name = data.get('name', '').strip()
+    phone = data.get('phone', '').strip()
+    if not token or not name or not phone:
+        return jsonify({'ok': False, 'message': 'Заполните все поля.'})
+    raw, maxq, err = validate_token(token)
+    if err:
+        return jsonify({'ok': False, 'message': 'Ошибка токена.'})
+    db_path = os.path.join(DATA_DIR, 'tokens.db')
+    conn = sqlite3.connect(db_path)
+    conn.execute('CREATE TABLE IF NOT EXISTS contacts (token TEXT, name TEXT, phone TEXT, created_at TEXT)')
+    conn.execute('INSERT INTO contacts (token, name, phone, created_at) VALUES (?, ?, ?, ?)',
+                 (token, name, phone, datetime.now(timezone.utc).isoformat()))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True, 'message': 'Спасибо! Менеджер свяжется с вами.'})
 
 
 @app.route('/health')
